@@ -1,0 +1,3 @@
+# RID Results
+
+This directory contains the **results from RID**. We also provide **pre-computed results** for your convenience.
