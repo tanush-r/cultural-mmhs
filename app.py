@@ -4,7 +4,7 @@ from PIL import Image
 import base64
 import io, os
 from dotenv import load_dotenv
-from prompts import cultural_prompt_drishtikon
+from prompts import cultural_prompt_drishtikon, cultural_agent
 
 load_dotenv(override=True)
 
@@ -13,8 +13,10 @@ client = InferenceClient(
     api_key=os.environ["HF_TOKEN"]
 )
 
-SYSTEM_PROMPT = cultural_prompt_drishtikon
-
+if "rules" not in st.session_state:
+    st.session_state.rules = ""
+if "output" not in st.session_state:
+    st.session_state.output = ""
 
 def encode_image(image: Image.Image):
     buffer = io.BytesIO()
@@ -24,7 +26,8 @@ def encode_image(image: Image.Image):
 
 def run_agent(image):
     img_b64 = encode_image(image)
-
+    SYSTEM_PROMPT = cultural_agent.format(org_sent="", rules=st.session_state.rules)
+    print(SYSTEM_PROMPT)
     messages = [
         {
             "role": "user",
@@ -74,18 +77,24 @@ with right:
             with st.spinner("Running cultural reasoning model..."):
                 output = run_agent(image)
 
-            output_box.markdown(
-                f"""
-                <div style="
-                    background-color:#111827;
-                    padding:16px;
-                    border-radius:10px;
-                    color:#E5E7EB;
-                    font-family: monospace;
-                    white-space: pre-wrap;
-                ">
-                {output}
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+                st.session_state.rules = output.split("Updated rules:")[1]
+                st.session_state.output = output
+
+        output_box.markdown(
+            f"""
+            <div style="
+                background-color:#111827;
+                padding:16px;
+                border-radius:10px;
+                color:#E5E7EB;
+                font-family: monospace;
+                white-space: pre-wrap;
+            ">
+            {st.session_state.output }
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    
+    st.subheader("Existing rules:")
+    st.text(st.session_state.rules)
